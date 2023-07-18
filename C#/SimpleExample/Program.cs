@@ -1,5 +1,4 @@
-﻿using Basler.Pylon;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -10,15 +9,17 @@ namespace SimpleExample
 
         private static Fg_Struct _fg;
         private static dma_mem _memHandle;
+        private static int _dispId0;
         private static string GetLastError()
         {
             return SiSoCsRt.Fg_getLastErrorDescription(_fg);
         }
-        private static void FreeMemGrabber(string errorMsg)
+        private static void FreeMemGrabberCloseDis(string errorMsg)
         {
             Console.WriteLine($"{errorMsg}: {GetLastError()}");
             SiSoCsRt.Fg_FreeMemEx(_fg, _memHandle);
             SiSoCsRt.Fg_FreeGrabber(_fg);
+            SiSoCsRt.CloseDisplay(_dispId0);
         }
         static void Main(string[] args)
         {
@@ -29,24 +30,37 @@ namespace SimpleExample
             uint width = 512;
             uint height = 512;
             uint samplePerPixel = 1;
+            // Number of channels
             uint bytePerSample = 1;
 
             InitLibraries();
             var boardsName = GetBoardsName();
-            Console.WriteLine($"Please choose a board by entering a number between 0 and {boardsName.Length-1}:");
+            if (boardsName.Length < 0)
+            {
+                Console.WriteLine($"Board not exits.");
+                return;
+            }
             var boardIndex = -1;
+
             do
             {
                 try
                 {
+                    if (boardsName.Length == 1)
+                    {
+                        boardIndex = 0;
+                        break;
+                    }
+                    Console.WriteLine($"Please choose a board by entering a number between 0 and {boardsName.Length - 1}:");
                     boardIndex = Convert.ToInt32(Console.ReadLine());
                 }
                 catch
                 {
-                    Console.WriteLine($"Invalid selection, retry [0-{boardsName.Length-1}]: ");
+                    Console.WriteLine($"Invalid selection, retry [0-{boardsName.Length - 1}]: ");
                 }
             }
             while (boardIndex < 0 || boardIndex >= boardsName.Length);
+
             var appletsName = GetApplets(boardIndex);
             Console.WriteLine($"Please choose an applet by entering a number between 0 and {appletsName.Length - 1}:");
             var appletIndex = -1;
@@ -70,32 +84,56 @@ namespace SimpleExample
                 return;
             }
             ulong bufferSize = width * height * bytePerSample;
-            ulong totalBufferSize = bufferSize * samplePerPixel;
+            ulong totalBufferSize = bufferSize * samplePerPixel * nbBuffers;
+
+            _dispId0 = SiSoCsRt.CreateDisplay(8 * bytePerSample * samplePerPixel, width, height);
+            SiSoCsRt.SetBufferWidth(_dispId0, width, height);
+
             _memHandle = SiSoCsRt.Fg_AllocMemEx(_fg, totalBufferSize, nbBuffers);
             if(_memHandle == null)
             {
                 Console.WriteLine($"error in Fg_AllocMemEx: {GetLastError()}");
                 SiSoCsRt.Fg_FreeGrabber(_fg);
+                SiSoCsRt.CloseDisplay(_dispId0);
                 return;
             }
-            if(SiSoCsRt.Fg_setParameterWithUInt(_fg, SiSoCsRt.FG_WIDTH, width, camPort) != SiSoCsRt.FG_OK)
+
+            if (SiSoCsRt.Fg_setParameterWithUInt(_fg, SiSoCsRt.FG_CAMERASIMULATOR_ENABLE, (uint)FgImageSourceTypes.FG_CAMERASIMULATOR , camPort) != SiSoCsRt.FG_OK)
             {
-                FreeMemGrabber("Fg_setParameterWithUInt(FG_WIDTH) failed");
+                FreeMemGrabberCloseDis("Fg_setParameterWithUInt(FG_CAMERASIMULATOR_ENABLE) failed");
+                return;
+            }
+
+            if (SiSoCsRt.Fg_setParameterWithUInt(_fg, SiSoCsRt.FG_CAMERASIMULATOR_WIDTH, width, camPort) != SiSoCsRt.FG_OK)
+            {
+                FreeMemGrabberCloseDis("Fg_setParameterWithUInt(FG_CAMERASIMULATOR_WIDTH) failed");
+                return;
+            }
+
+            if (SiSoCsRt.Fg_setParameterWithUInt(_fg, SiSoCsRt.FG_CAMERASIMULATOR_HEIGHT, height, camPort) != SiSoCsRt.FG_OK)
+            {
+                FreeMemGrabberCloseDis("Fg_setParameterWithUInt(FG_CAMERASIMULATOR_HEIGHT) failed");
+                return;
+            }
+
+            if (SiSoCsRt.Fg_setParameterWithUInt(_fg, SiSoCsRt.FG_WIDTH, width, camPort) != SiSoCsRt.FG_OK)
+            {
+                FreeMemGrabberCloseDis("Fg_setParameterWithUInt(FG_WIDTH) failed");
                 return;
             }
             if (SiSoCsRt.Fg_setParameterWithUInt(_fg, SiSoCsRt.FG_HEIGHT, height, camPort) != SiSoCsRt.FG_OK)
             {
-                FreeMemGrabber("Fg_setParameterWithUInt(FG_HEIGHT) failed");
+                FreeMemGrabberCloseDis("Fg_setParameterWithUInt(FG_HEIGHT) failed");
                 return;
             }
             if (SiSoCsRt.Fg_setParameterWithInt(_fg, SiSoCsRt.FG_BITALIGNMENT, SiSoCsRt.FG_LEFT_ALIGNED, camPort) != SiSoCsRt.FG_OK)
             {
-                FreeMemGrabber("Fg_setParameterWithInt(FG_BITALIGNMENT) failed");
+                FreeMemGrabberCloseDis("Fg_setParameterWithInt(FG_BITALIGNMENT) failed");
                 return;
             }
             if (SiSoCsRt.Fg_AcquireEx(_fg, camPort, nrOfPicturesToGrab, SiSoCsRt.ACQ_STANDARD, _memHandle) != SiSoCsRt.FG_OK)
             {
-                FreeMemGrabber("Fg_AcquireEx() failed");
+                FreeMemGrabberCloseDis("Fg_AcquireEx() failed");
                 return;
             }
             long last_pic_nr = 0;
@@ -109,11 +147,14 @@ namespace SimpleExample
                     SiSoCsRt.Fg_stopAcquire(_fg, camPort);
                     SiSoCsRt.Fg_FreeMemEx(_fg, _memHandle);
                     SiSoCsRt.Fg_FreeGrabber(_fg);
+                    SiSoCsRt.CloseDisplay(_dispId0);
                     return;
                 }
                 last_pic_nr = cur_pic_nr;
                 var img = SiSoCsRt.Fg_getImagePtrEx(_fg, last_pic_nr, camPort, _memHandle);
-                ImageWindow.DisplayImage(0, img.toByteArray(Convert.ToUInt32(bufferSize)), PixelType.Mono8, (int)width, (int)height, 0, ImageOrientation.TopDown);
+                SiSoCsRt.DrawBuffer(_dispId0, img, Convert.ToInt32(last_pic_nr), "");
+                // Pylon image window 
+                //ImageWindow.DisplayImage(0, img.toByteArray(Convert.ToUInt32(bufferSize)), PixelType.Mono8, (int)width, (int)height, 0, ImageOrientation.TopDown);
             }
         }
         private static int InitLibraries()

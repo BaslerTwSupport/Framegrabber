@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("FramegrabberSDK")]
+[assembly: AssemblyTitle("MyFirstSDK")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("FramegrabberSDK")]
+[assembly: AssemblyProduct("MyFirstSDK")]
 [assembly: AssemblyCopyright("Copyright ©  2023")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("5bcc0ed3-ac2c-4670-8652-2b27ecfe4d1c")]
+[assembly: Guid("beda4fd7-b837-4f8a-b156-4eaa6b5310c4")]
 
 // Version information for an assembly consists of the following four values:
 //

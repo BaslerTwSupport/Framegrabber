@@ -13,6 +13,7 @@ int main(int argc, char* argv[], char* envp[])
     unsigned int width              = 512;
     unsigned int height             = 512;
     int samplePerPixel              = 1;
+    // Number of channels
     size_t bytePerSample            = 1;
 
     // initialize libraries
@@ -44,6 +45,30 @@ int main(int argc, char* argv[], char* envp[])
     dma_mem *memHandle = Fg_AllocMemEx(fg, totalBufferSize, nbBuffers);
     if (memHandle == NULL) {
         fprintf(stderr, "error in Fg_AllocMemEx: %s\n", Fg_getLastErrorDescription(fg));
+        CloseDisplay(dispId0);
+        Fg_FreeGrabber(fg);
+        return FG_ERROR;
+    }
+    unsigned int cameraSim = FG_CAMERASIMULATOR;
+    if (Fg_setParameter(fg, FG_CAMERASIMULATOR_ENABLE, &cameraSim, camPort) < 0) {
+        fprintf(stderr, "Fg_setParameter(FG_CAMERASIMULATOR_ENABLE) failed: %s\n", Fg_getLastErrorDescription(fg));
+        Fg_FreeMemEx(fg, memHandle);
+        CloseDisplay(dispId0);
+        Fg_FreeGrabber(fg);
+        return FG_ERROR;
+    }
+
+    if (Fg_setParameter(fg, FG_CAMERASIMULATOR_WIDTH, &width, camPort) < 0) {
+        fprintf(stderr, "Fg_setParameter(FG_CAMERASIMULATOR_WIDTH) failed: %s\n", Fg_getLastErrorDescription(fg));
+        Fg_FreeMemEx(fg, memHandle);
+        CloseDisplay(dispId0);
+        Fg_FreeGrabber(fg);
+        return FG_ERROR;
+    }
+
+    if (Fg_setParameter(fg, FG_CAMERASIMULATOR_HEIGHT, &height, camPort) < 0) {
+        fprintf(stderr, "Fg_setParameter(FG_CAMERASIMULATOR_WIDTH) failed: %s\n", Fg_getLastErrorDescription(fg));
+        Fg_FreeMemEx(fg, memHandle);
         CloseDisplay(dispId0);
         Fg_FreeGrabber(fg);
         return FG_ERROR;
