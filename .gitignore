@@ -31,7 +31,6 @@ Release/
 /*.csv
 /*.xml
 *.cs.bak
-*.user
 *.bak
 *.clef
 *.sarif
