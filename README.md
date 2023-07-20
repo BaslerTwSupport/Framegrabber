@@ -13,12 +13,12 @@ Add paths in C++ project property:
    * Library Directories
       * $(BASLER_FG_SDK_DIR)\lib\visualc
 ### Other examples
-Folder: FramegrabberSDK\SDKExamples
+Folder: ...\Basler\FramegrabberSDK\SDKExamples
 ## C#
 Add dll to project reference.
 ### Reference dll
  * SiSoCsInterface
-   * Dll path: $(BASLER_FG_SDK_DIR)\bin\SiSoCsInterface.dll
+   * Dll path: ...\Basler\FramegrabberSDK\\bin\SiSoCsInterface.dll
 
 ## Python
 ### Installation
