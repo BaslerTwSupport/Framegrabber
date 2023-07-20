@@ -14,8 +14,8 @@ Add paths in C++ project property:
 ## C#
 Add dll to project reference.
 ### Reference
-* SiSoCsInterface
- * Dll path: $(BASLER_FG_SDK_DIR)\bin\SiSoCsInterface.dll
+ * SiSoCsInterface
+   * Dll path: $(BASLER_FG_SDK_DIR)\bin\SiSoCsInterface.dll
 
 ## Python
 ### Installation
