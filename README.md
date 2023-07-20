@@ -29,7 +29,7 @@ python -m pip install --user numpy
 ```
 4. Set environment variables. Both ways are doable. 
  * By python:
-   * > If you have kind of anaconda system(multiple python verions) then recommend using python way.
+    > If you have kind of anaconda system(multiple python verions) then recommend using python way.
 ```python
 import os
 import sys
