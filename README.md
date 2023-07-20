@@ -27,7 +27,7 @@ Add dll to project reference.
 ```console
 python -m pip install --user numpy
 ```
-4. Set environment variables. 
+4. Set environment variables. Both ways are doable. If you have kind of anaconda system(multiple python verions) then recommend using python way.
  * By python:
 ```python
 import os
