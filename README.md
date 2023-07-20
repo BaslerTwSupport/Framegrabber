@@ -36,5 +36,8 @@ sys.path.insert(0, rf"{framegrabber_sdk_path}\bin")
 sys.path.insert(0, rf"{framegrabber_sdk_path}\SDKWrapper\PythonWrapper\python310\lib")
 ```
  * By manual: Add path in system setting.
+```
+Path : %BASLER_FG_SDK_DIR%\bin; %BASLER_FG_SDK_DIR%\SDKWrapper\PythonWrapper\python310\lib
+```
 ### Reference
 https://docs.baslerweb.com/frame-grabbers/python-wrapper#installation
