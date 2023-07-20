@@ -1,3 +1,4 @@
+![FramegrabberSDK](doc/images/FramegrabberSDK_800x200.png "FramegrabberSDK")
 # Framegrabber SDK
 Framegrabber SDK sample codes
 
