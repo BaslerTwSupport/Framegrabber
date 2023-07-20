@@ -3,13 +3,13 @@ Framegrabber SDK sample codes
 
 ## C++
 ### Property
-Add paths in C++ project property.
-* VC++ Direcotries
- * Include Directories
-  * $(BASLER_FG_SDK_DIR)\SDKExamples\include;
-  * $(BASLER_FG_SDK_DIR)\include
- * Library Directories
-  * $(BASLER_FG_SDK_DIR)\lib\visualc
+Add paths in C++ project property:
+ * VC++ Directories
+   * Include Directories
+      * $(BASLER_FG_SDK_DIR)\SDKExamples\include;
+      * $(BASLER_FG_SDK_DIR)\include
+   * Library Directories
+      * $(BASLER_FG_SDK_DIR)\lib\visualc
 
 ## C#
 Add dll to project reference.
@@ -20,7 +20,7 @@ Add dll to project reference.
 ## Python
 ### Installation
 1. Framegrabber SDK version 5.10.
-2. Python. The support version are 3.7 ~ 3.10.
+2. Python. The support version is 3.7 ~ 3.10.
 3. Install Numpy by command prompt.
 ```console
 python -m pip install --user numpy
