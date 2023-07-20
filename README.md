@@ -1,7 +1,8 @@
 ![FramegrabberSDK](doc/images/FramegrabberSDK_800x200.png "FramegrabberSDK")
 # Framegrabber SDK
 Framegrabber SDK sample codes
-
+## Prerequisites
+ * Framegrabber SDK version 5.10.
 ## C++
 ### Property
 Add paths in C++ project property:
@@ -20,9 +21,8 @@ Add dll to project reference.
 
 ## Python
 ### Installation
-1. Framegrabber SDK version 5.10.
-2. Python. The support version is 3.7 ~ 3.10.
-3. Install Numpy by command prompt.
+1. Install python. The support version is 3.7 ~ 3.10.
+2. Install numpy by command prompt.
 ```console
 python -m pip install --user numpy
 ```
