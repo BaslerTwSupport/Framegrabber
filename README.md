@@ -2,7 +2,7 @@
 # Framegrabber SDK
 Framegrabber SDK sample codes
 ## Prerequisites
- * Framegrabber SDK version 5.10.
+ * Framegrabber SDK version >= 5.10.
 ## C++
 ### Property
 Add paths in C++ project property:
