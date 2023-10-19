@@ -8,6 +8,8 @@ namespace SimpleExample
     {
 
         private static Fg_Struct _fg;
+        private static SgcBoardHandle _bh;
+        private static SgcCameraHandle _camera;
         private static dma_mem _memHandle;
         private static int _dispId0;
         private static string GetLastError()
@@ -33,6 +35,8 @@ namespace SimpleExample
             // Number of channels
             uint bytePerSample = 1;
 
+            bool enableCameraSimulator = true;
+
             InitLibraries();
             var boardsName = GetBoardsName();
             if (boardsName.Length < 0)
@@ -49,6 +53,8 @@ namespace SimpleExample
                     if (boardsName.Length == 1)
                     {
                         boardIndex = 0;
+                        Console.WriteLine($"It only have one borad.");
+                        Console.WriteLine($"---------------------------------------");
                         break;
                     }
                     Console.WriteLine($"Please choose a board by entering a number between 0 and {boardsName.Length - 1}:");
@@ -76,6 +82,7 @@ namespace SimpleExample
                 }
             }
             while (appletIndex < 0 || appletIndex >= appletsName.Length);
+            Console.WriteLine($"---------------------------------------");
             var applet = appletsName[appletIndex];
             _fg = SiSoCsRt.Fg_Init(applet, Convert.ToUInt32(boardIndex));
             if(_fg == null)
@@ -83,6 +90,70 @@ namespace SimpleExample
                 Console.WriteLine($"error in Fg_Init: {SiSoCsRt.Fg_getLastErrorDescription(null)}");
                 return;
             }
+            int ret;
+            if (!enableCameraSimulator)
+            {
+                _bh = SiSoCsRt.Sgc_initBoard(_fg, 0, out ret);
+                if (ret < 0)
+                {
+                    SiSoCsRt.Fg_FreeMemEx(_fg, _memHandle);
+                    SiSoCsRt.Fg_FreeGrabber(_fg);
+                    throw new Exception($"Error in Sgc_initBoard(): {SiSoCsRt.Sgc_getErrorDescription(ret)} ({ret})");
+                }
+
+                ret = SiSoCsRt.Sgc_scanPorts(_bh, 0x0F, 5000, SiSoCsRt.CXP_SPEED_3125);
+                if (ret < 0)
+                {
+                    SiSoCsRt.Sgc_freeBoard(_bh);
+                    SiSoCsRt.Fg_FreeMemEx(_fg, _memHandle);
+                    SiSoCsRt.Fg_FreeGrabber(_fg);
+                    throw new Exception($"Error in Sgc_scanPorts(): {SiSoCsRt.Sgc_getErrorDescription(ret)} ({ret})");
+                }
+
+                _camera = SiSoCsRt.Sgc_getCamera(_bh, camPort, out ret);
+                if (ret < 0)
+                {
+                    SiSoCsRt.Sgc_freeBoard(_bh);
+                    SiSoCsRt.Fg_FreeMemEx(_fg, _memHandle);
+                    SiSoCsRt.Fg_FreeGrabber(_fg);
+                    throw new Exception($"Error in Sgc_getCamera(): {SiSoCsRt.Sgc_getErrorDescription(ret)} ({ret})");
+                }
+
+                ret = SiSoCsRt.Sgc_connectCamera(_camera);
+                if (ret < 0)
+                {
+                    SiSoCsRt.Sgc_freeBoard(_bh);
+                    SiSoCsRt.Fg_FreeMemEx(_fg, _memHandle);
+                    SiSoCsRt.Fg_FreeGrabber(_fg);
+                    throw new Exception($"Error in Sgc_connectCamera(): {SiSoCsRt.Sgc_getErrorDescription(ret)} ({ret})");
+                }
+
+                string modelName = SiSoCsRt.Sgc_getStringValue(_camera, "DeviceModelName", out ret);
+                if (ret < 0)
+                {
+                    throw new ArgumentException($"Port A: Error in Sgc_getStringValue(): \"DeviceModelName\" {SiSoCsRt.Sgc_getErrorDescription(ret)} ({ret})");
+                }
+                Console.WriteLine($"Camera model: {modelName}.");
+                long valueL = 0;
+                ret = SiSoCsRt.Sgc_getIntegerValue(_camera, "Width", out valueL);
+                if (ret < 0)
+                {
+                    throw new ArgumentException($"Port A: Error in Sgc_getIntegerValue(): \"Width\" {SiSoCsRt.Sgc_getErrorDescription(ret)} ({ret})");
+                }
+                width = Convert.ToUInt32(valueL);
+                ret = SiSoCsRt.Sgc_getIntegerValue(_camera, "Height", out valueL);
+                if (ret < 0)
+                {
+                    throw new ArgumentException($"Port A: Error in Sgc_getIntegerValue(): \"Height\" {SiSoCsRt.Sgc_getErrorDescription(ret)} ({ret})");
+                }
+                height = Convert.ToUInt32(valueL);
+                bytePerSample = SiSoCsRt.Sgc_getEnumerationValueAsString(_camera, "PixelFormat", out ret).ToLower().IndexOf("mono") > -1 ? Convert.ToUInt32(1) : Convert.ToUInt32(3);
+                if (ret < 0)
+                {
+                    throw new ArgumentException($"Port A: Error in Sgc_getEnumerationValueAsString(): \"PixelFormat\" {SiSoCsRt.Sgc_getErrorDescription(ret)} ({ret})");
+                }
+            }
+
             ulong bufferSize = width * height * bytePerSample;
             ulong totalBufferSize = bufferSize * samplePerPixel * nbBuffers;
 
@@ -98,24 +169,32 @@ namespace SimpleExample
                 return;
             }
 
-            if (SiSoCsRt.Fg_setParameterWithUInt(_fg, SiSoCsRt.FG_CAMERASIMULATOR_ENABLE, (uint)FgImageSourceTypes.FG_CAMERASIMULATOR , camPort) != SiSoCsRt.FG_OK)
+            if (enableCameraSimulator)
             {
-                FreeMemGrabberCloseDis("Fg_setParameterWithUInt(FG_CAMERASIMULATOR_ENABLE) failed");
-                return;
-            }
+                if (SiSoCsRt.Fg_setParameterWithUInt(_fg, SiSoCsRt.FG_CAMERASIMULATOR_ENABLE, (uint)FgImageSourceTypes.FG_CAMERASIMULATOR, camPort) != SiSoCsRt.FG_OK)
+                {
+                    FreeMemGrabberCloseDis("Fg_setParameterWithUInt(FG_CAMERASIMULATOR_ENABLE) failed");
+                    return;
+                }
 
-            if (SiSoCsRt.Fg_setParameterWithUInt(_fg, SiSoCsRt.FG_CAMERASIMULATOR_WIDTH, width, camPort) != SiSoCsRt.FG_OK)
-            {
-                FreeMemGrabberCloseDis("Fg_setParameterWithUInt(FG_CAMERASIMULATOR_WIDTH) failed");
-                return;
-            }
+                if (SiSoCsRt.Fg_setParameterWithUInt(_fg, SiSoCsRt.FG_CAMERASIMULATOR_WIDTH, width, camPort) != SiSoCsRt.FG_OK)
+                {
+                    FreeMemGrabberCloseDis("Fg_setParameterWithUInt(FG_CAMERASIMULATOR_WIDTH) failed");
+                    return;
+                }
 
-            if (SiSoCsRt.Fg_setParameterWithUInt(_fg, SiSoCsRt.FG_CAMERASIMULATOR_HEIGHT, height, camPort) != SiSoCsRt.FG_OK)
-            {
-                FreeMemGrabberCloseDis("Fg_setParameterWithUInt(FG_CAMERASIMULATOR_HEIGHT) failed");
-                return;
-            }
+                if (SiSoCsRt.Fg_setParameterWithUInt(_fg, SiSoCsRt.FG_CAMERASIMULATOR_HEIGHT, height, camPort) != SiSoCsRt.FG_OK)
+                {
+                    FreeMemGrabberCloseDis("Fg_setParameterWithUInt(FG_CAMERASIMULATOR_HEIGHT) failed");
+                    return;
+                }
 
+                if (SiSoCsRt.Fg_setParameterWithUInt(_fg, SiSoCsRt.FG_CAMERASIMULATOR_TRIGGER_MODE, (uint)CameraSimulatorTriggerMode.SIMULATION_FREE_RUN, camPort) != SiSoCsRt.FG_OK)
+                {
+                    FreeMemGrabberCloseDis("Fg_setParameterWithUInt(FG_CAMERASIMULATOR_HEIGHT) failed");
+                    return;
+                }
+            }
             if (SiSoCsRt.Fg_setParameterWithUInt(_fg, SiSoCsRt.FG_WIDTH, width, camPort) != SiSoCsRt.FG_OK)
             {
                 FreeMemGrabberCloseDis("Fg_setParameterWithUInt(FG_WIDTH) failed");
@@ -134,8 +213,30 @@ namespace SimpleExample
             if (SiSoCsRt.Fg_AcquireEx(_fg, camPort, nrOfPicturesToGrab, SiSoCsRt.ACQ_STANDARD, _memHandle) != SiSoCsRt.FG_OK)
             {
                 FreeMemGrabberCloseDis("Fg_AcquireEx() failed");
+                if(!enableCameraSimulator)
+                    SiSoCsRt.Sgc_disconnectCamera(_camera);
                 return;
             }
+
+            if (!enableCameraSimulator)
+            { 
+                ret = SiSoCsRt.Sgc_startAcquisition(_camera, Convert.ToUInt16(true));
+                if (ret < 0)
+                {
+                    SiSoCsRt.Fg_stopAcquireEx(_fg, 0, _memHandle, 0);
+                    SiSoCsRt.Sgc_disconnectCamera(_camera);
+                    SiSoCsRt.Sgc_freeBoard(_bh);
+                    _bh = null;
+                    //SiSoCsRt.CloseDisplay(displayId);
+                    SiSoCsRt.Fg_FreeMemEx(_fg, _memHandle);
+                    _memHandle = null;
+                    SiSoCsRt.Fg_FreeGrabber(_fg);
+                    _fg = null;
+                    Console.ReadKey();
+                    throw new Exception($"Error in Fg_AcquireEx() for channel 0: {SiSoCsRt.Fg_getErrorDescription(ret)}");
+                }
+            }
+
             long last_pic_nr = 0;
             long cur_pic_nr;
             int timeout = 4;
