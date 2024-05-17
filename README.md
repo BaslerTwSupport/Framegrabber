@@ -43,3 +43,6 @@ sys.path.insert(0, rf"{framegrabber_sdk_path}\SDKWrapper\PythonWrapper\python310
 ```
 ### Reference information
 https://docs.baslerweb.com/frame-grabbers/python-wrapper#installation
+
+## Support
+If you still have any questions please contact [Balser Support](https://www.baslerweb.com/en-us/support/contact/)
