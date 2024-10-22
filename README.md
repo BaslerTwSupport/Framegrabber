@@ -18,7 +18,7 @@ Folder: ...\Basler\FramegrabberSDK\SDKExamples
 Add dll to project reference.
 ### Reference dll
  * SiSoCsInterface
-   * Dll path: ...\Basler\FramegrabberSDK\\bin\SiSoCsInterface.dll
+   * Dll path: ...\Basler\FramegrabberSDK\lib\SiSoCsInterface.dll
 
 ## Python
 ### Installation
